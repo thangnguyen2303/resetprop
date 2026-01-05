@@ -1,4 +1,4 @@
-name: Build Static Resetprop
+name: Build Resetprop Static
 
 on:
   workflow_dispatch:
@@ -10,34 +10,37 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install NDK
-        run: |
-          sudo apt-get update
-          # Cài đặt NDK trực tiếp từ kho lưu trữ của Ubuntu hoặc tải bản r25b
-          wget https://dl.google.com/android/repository/android-ndk-r25b-linux.zip
-          unzip -q android-ndk-r25b-linux.zip
-          echo "ANDROID_NDK_HOME=$(pwd)/android-ndk-r25b" >> $GITHUB_ENV
-          echo "$(pwd)/android-ndk-r25b" >> $GITHUB_PATH
+      - name: Setup NDK
+        uses: nwidart/setup-ndk@v1
+        with:
+          ndk-version: r25c
 
-      - name: Build with ndk-build
+      - name: Compile Static Binary
         run: |
-          # Dự án này sử dụng cấu hình Android.mk
-          # Chúng ta sẽ ép build cho kiến trúc arm64
-          $ANDROID_NDK_HOME/ndk-build \
-            NDK_PROJECT_PATH=. \
-            APP_BUILD_SCRIPT=Android.mk \
-            APP_ABI=arm64-v8a \
-            APP_PLATFORM=android-30 \
-            -j$(nproc)
-
-      - name: Prepare Artifacts
-        run: |
-          mkdir -p output
-          # Tìm file resetprop vừa build xong (thường ở thư mục libs hoặc obj)
-          find . -name "resetprop" -type f -exec cp {} output/xeu_toolbox_static \;
+          # Thiết lập đường dẫn compiler của NDK
+          TOOLCHAIN=$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64
+          export PATH=$TOOLCHAIN/bin:$PATH
+          
+          # Sử dụng compiler aarch64 cho Android API 29 (Android 10+)
+          # Thêm cờ -static để gom hết libc, libm vào trong 1 file duy nhất
+          aarch64-linux-android29-clang++ \
+            -Iinclude \
+            main.cpp \
+            system_property_api.cpp \
+            system_property_set.cpp \
+            systemproperties/*.cpp \
+            -std=c++17 \
+            -Os \
+            -fdata-sections -ffunction-sections \
+            -fvisibility=hidden -fno-rtti -fno-exceptions \
+            -Wl,--gc-sections -s \
+            -static \
+            -o xeu_toolbox_static
+          
+          ls -al xeu_toolbox_static
 
       - name: Upload Binary
         uses: actions/upload-artifact@v4
         with:
-          name: xeu_toolbox_static_bin
-          path: output/xeu_toolbox_static
+          name: xeu_toolbox_static
+          path: xeu_toolbox_static
