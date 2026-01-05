@@ -36,16 +36,13 @@ jobs:
             -fdata-sections -ffunction-sections \
             -fvisibility=hidden -fno-rtti -fno-exceptions \
             -Wl,--gc-sections -s \
-            -static-libgcc \
-            -lc -lm -ldl \
-            -stdlib=libc++ \
-            -static-libstdc++ \
-            -o resetprop-static
+            -static \
+            -o tn_resetprop
           
-          ls -al resetprop-static
+          ls -al tn_resetprop
 
       - name: Upload Binary
         uses: actions/upload-artifact@v4
         with:
-          name: resetprop-static-bin
-          path: resetprop-static
+          name: tn_resetprop-bin
+          path: tn_resetprop
