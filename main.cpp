@@ -22,21 +22,19 @@ static int setprop(const char *name, const char *value, const bool trigger) {
     }
 
     if (ret)
-        printf("resetprop: setprop error\n");
+        printf("error\n");
 
     return ret;
 }
 
 int main(int argc, char** argv) {
     if (argc < 3) {
-        printf("Usage: %s <name> <value>\n", argv[0]);
         return 1;
     }
 
     if (__system_properties_init()) {
-        fprintf(stderr, "Failed to initialize system properties\n");
         return 1;
     }
 
-    return setprop(argv[1], argv[2], true);
+    return setprop(argv[1], argv[2], false);
 }
