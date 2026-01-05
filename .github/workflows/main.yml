@@ -10,20 +10,22 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup NDK
-        uses: nwidart/setup-ndk@v1
-        with:
-          ndk-version: r25c
+      - name: Install NDK Manual
+        run: |
+          # Tải NDK r25b trực tiếp từ Google (bản ổn định nhất cho static build)
+          wget -q https://dl.google.com/android/repository/android-ndk-r25b-linux.zip
+          unzip -q android-ndk-r25b-linux.zip
+          # Thiết lập biến môi trường
+          echo "NDK_PATH=$(pwd)/android-ndk-r25b" >> $GITHUB_ENV
 
       - name: Compile Static Binary
         run: |
-          # Thiết lập đường dẫn compiler của NDK
-          TOOLCHAIN=$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64
-          export PATH=$TOOLCHAIN/bin:$PATH
+          # Thiết lập đường dẫn compiler
+          export TOOLCHAIN=$NDK_PATH/toolchains/llvm/prebuilt/linux-x86_64
+          export CLANG=$TOOLCHAIN/bin/aarch64-linux-android29-clang++
           
-          # Sử dụng compiler aarch64 cho Android API 29 (Android 10+)
-          # Thêm cờ -static để gom hết libc, libm vào trong 1 file duy nhất
-          aarch64-linux-android29-clang++ \
+          # Thực hiện lệnh compile tương tự build.sh nhưng ép -static
+          $CLANG \
             -Iinclude \
             main.cpp \
             system_property_api.cpp \
@@ -35,12 +37,12 @@ jobs:
             -fvisibility=hidden -fno-rtti -fno-exceptions \
             -Wl,--gc-sections -s \
             -static \
-            -o xeu_toolbox_static
+            -o resetprop-static
           
-          ls -al xeu_toolbox_static
+          ls -al resetprop-static
 
       - name: Upload Binary
         uses: actions/upload-artifact@v4
         with:
-          name: xeu_toolbox_static
-          path: xeu_toolbox_static
+          name: resetprop-static-bin
+          path: resetprop-static
