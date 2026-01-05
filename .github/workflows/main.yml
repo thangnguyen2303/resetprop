@@ -36,7 +36,10 @@ jobs:
             -fdata-sections -ffunction-sections \
             -fvisibility=hidden -fno-rtti -fno-exceptions \
             -Wl,--gc-sections -s \
-            -static \
+            -static-libgcc \
+            -lc -lm -ldl \
+            -stdlib=libc++ \
+            -static-libstdc++ \
             -o resetprop-static
           
           ls -al resetprop-static
